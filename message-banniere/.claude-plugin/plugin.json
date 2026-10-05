@@ -1,0 +1,1 @@
+{ "name": "message-banniere", "version": "0.2.0", "description": "Bannière en gras (noir sur jaune) affichant le nom de la session de travail en cours", "types": "./types/index.d.ts" }
