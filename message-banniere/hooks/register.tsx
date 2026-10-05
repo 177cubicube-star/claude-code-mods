@@ -13,17 +13,12 @@ const SANS_NOM = 'SESSION SANS NOM'
 const PANNEAU = 'banniere'
 const TITRE_PANNEAU = 'Session de travail'
 
-// La ligne de statut n'accepte que du texte brut : on imite le gras avec les
-// lettres « gras sans empattement » d'Unicode, et le fond avec des carrés jaunes.
-const enGras = (texte: string): string =>
-  Array.from(texte, c => {
-    if (c >= 'A' && c <= 'Z') return String.fromCodePoint(0x1d5d4 + c.charCodeAt(0) - 65)
-    if (c >= 'a' && c <= 'z') return String.fromCodePoint(0x1d5ee + c.charCodeAt(0) - 97)
-    if (c >= '0' && c <= '9') return String.fromCodePoint(0x1d7ec + c.charCodeAt(0) - 48)
-    return c
-  }).join('')
+// Largeur demandée au panneau ancré : assez pour le nom, sans écraser la conversation.
+const COLONNES = 32
 
-const ligne = (nom: string): string => `🟨🟨🟨  ${enGras(nom.toUpperCase())}  🟨🟨🟨`
+// La ligne de statut n'accepte que du texte brut. Majuscules simples et barres :
+// les lettres Unicode « gras » et les emojis se rendent à des largeurs inégales.
+const ligne = (nom: string): string => `▌ ${nom.toUpperCase()} ▐`
 
 const titre = atom({ plugin: 'message-banniere', key: 'titre' } as const, null as Titre)
 
@@ -49,7 +44,7 @@ export const register: Register = on => {
       description: 'Affiche le nom de la session de travail en cours',
     })
     $.ui.status(ligne((await read($, titre)) ?? SANS_NOM))
-    void $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU })
+    void $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU, columns: COLONNES })
 
     return next(e)
   })
@@ -57,14 +52,14 @@ export const register: Register = on => {
   // ...et rouvert à chaque message : une action de la personne place le panneau à toute largeur.
   on('prompt.submit', async ($, e, next) => {
     $.ui.status(ligne((await read($, titre)) ?? SANS_NOM))
-    void $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU })
+    void $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU, columns: COLONNES })
 
     return next(e)
   })
 
   on('command.run', { command: 'banniere' }, async $ => {
     $.ui.status(ligne((await read($, titre)) ?? SANS_NOM))
-    await $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU })
+    await $.ui.open({ id: PANNEAU, title: TITRE_PANNEAU, columns: COLONNES })
 
     return { text: 'Bannière ouverte.' }
   })
@@ -74,7 +69,14 @@ export const register: Register = on => {
     const nom = (await read($, titre)) ?? SANS_NOM
 
     return (
-      <Box backgroundColor={FOND} paddingX={3} paddingY={1} justifyContent="center">
+      <Box
+        backgroundColor={FOND}
+        paddingX={3}
+        paddingY={1}
+        flexGrow={1}
+        alignItems="center"
+        justifyContent="center"
+      >
         <Text bold color={TEXTE} backgroundColor={FOND}>
           {nom.toUpperCase()}
         </Text>
